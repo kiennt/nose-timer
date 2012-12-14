@@ -40,6 +40,9 @@ log = logging.getLogger('nose.plugins.nose_timer')
 class NoseTimer(Plugin):
 
     enabled = False
+    show_test_status = False
+    ERROR, FAILED, PASSED = xrange(3)
+    STATUS = ["ERROR", "FAILED", "PASSED"]
 
     def _timeTaken(self):
         if hasattr(self, '_timer'):
@@ -62,19 +65,33 @@ class NoseTimer(Plugin):
                 Path can be relative to current working directory \
                 or an absolute path. May be specified multiple \
                 times. [NOSE_EXCLUDE_DIRS]")
+        parser.add_option(
+            "-v", action="store_true",
+            dest="with_test_status",
+            help="Directory to exclude from test discovery. \
+                Path can be relative to current working directory \
+                or an absolute path. May be specified multiple \
+                times. [NOSE_EXCLUDE_DIRS]")
 
     def configure(self, options, config):
         """Configures the test timer plugin based on command line options."""
         super(NoseTimer, self).configure(options, config)
 
         if options.with_test_timers:
-          self.enabled = True
+            self.enabled = True
         else:
-          self.enabled = False
+            self.enabled = False
         if not self.enabled:
-          return
+            return
+
+        if options.with_test_status:
+            self.show_test_status = True
+        else:
+            self.show_test_status = False
+
         self.config = config
         self._timed_tests = {}
+        self._status_tests = {}
 
     def startTest(self, test):
         """Initializes a timer before starting a test."""
@@ -86,16 +103,23 @@ class NoseTimer(Plugin):
             return
         d = sorted(self._timed_tests.iteritems(), key=operator.itemgetter(1))
         for test, time_taken in d:
-            stream.writeln("%s: %0.4f" % (test, time_taken))
+            status = self.STATUS[self._status_tests[test]]
+            if self.show_test_status:
+                stream.writeln("%s: %0.4f (%s)" % (test, time_taken, status))
+            else:
+                stream.writeln("%s: %0.4f" % (test, time_taken))
 
     def _register_time(self, test):
         self._timed_tests[test.id()] = self._timeTaken()
 
     def addError(self, test, err, capt=None):
         self._register_time(test)
+        self._status_tests[test.id()] = self.ERROR
 
     def addFailure(self, test, err, capt=None, tb_info=None):
         self._register_time(test)
+        self._status_tests[test.id()] = self.FAILED
 
     def addSuccess(self, test, capt=None):
         self._register_time(test)
+        self._status_tests[test.id()] = self.PASSED
