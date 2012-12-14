@@ -87,11 +87,12 @@ class NoseTimer(Plugin):
     def report_list_test(self, message, alist, stream):
         if not alist:
             return
+
         print "----------------------------------------------"
         print message
         sorted_list = sorted(alist, key=lambda x: self._timed_tests[x])
         for test in sorted_list:
-            stream.writeln("%s: %0.4f" % (test, self._timed_tests[test])
+            stream.writeln("%s: %0.4f" % (test, self._timed_tests[test]))
 
     def report(self, stream):
         """Report the test times"""
