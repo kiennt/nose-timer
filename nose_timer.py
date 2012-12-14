@@ -40,7 +40,7 @@ log = logging.getLogger('nose.plugins.nose_timer')
 class NoseTimer(Plugin):
 
     enabled = False
-    show_test_status = False
+    show_test_status = True
     ERROR, FAILED, PASSED = xrange(3)
     STATUS = ["ERROR", "FAILED", "PASSED"]
 
@@ -65,13 +65,6 @@ class NoseTimer(Plugin):
                 Path can be relative to current working directory \
                 or an absolute path. May be specified multiple \
                 times. [NOSE_EXCLUDE_DIRS]")
-        parser.add_option(
-            "-v", action="store_true",
-            dest="with_test_status",
-            help="Directory to exclude from test discovery. \
-                Path can be relative to current working directory \
-                or an absolute path. May be specified multiple \
-                times. [NOSE_EXCLUDE_DIRS]")
 
     def configure(self, options, config):
         """Configures the test timer plugin based on command line options."""
@@ -83,11 +76,6 @@ class NoseTimer(Plugin):
             self.enabled = False
         if not self.enabled:
             return
-
-        if options.with_test_status:
-            self.show_test_status = True
-        else:
-            self.show_test_status = False
 
         self.config = config
         self._timed_tests = {}
@@ -104,10 +92,7 @@ class NoseTimer(Plugin):
         d = sorted(self._timed_tests.iteritems(), key=operator.itemgetter(1))
         for test, time_taken in d:
             status = self.STATUS[self._status_tests[test]]
-            if self.show_test_status:
-                stream.writeln("%s: %0.4f (%s)" % (test, time_taken, status))
-            else:
-                stream.writeln("%s: %0.4f" % (test, time_taken))
+            stream.writeln("%s: %0.4f (%s)" % (test, time_taken, status))
 
     def _register_time(self, test):
         self._timed_tests[test.id()] = self._timeTaken()
