@@ -40,9 +40,6 @@ log = logging.getLogger('nose.plugins.nose_timer')
 class NoseTimer(Plugin):
 
     enabled = False
-    show_test_status = True
-    ERROR, FAILED, PASSED = xrange(3)
-    STATUS = ["ERROR", "FAILED", "PASSED"]
 
     def _timeTaken(self):
         if hasattr(self, '_timer'):
@@ -79,32 +76,42 @@ class NoseTimer(Plugin):
 
         self.config = config
         self._timed_tests = {}
-        self._status_tests = {}
+        self._passed_tests = []
+        self._failed_tests = []
+        self._error_tests = []
 
     def startTest(self, test):
         """Initializes a timer before starting a test."""
         self._timer = time()
 
+    def report_list_test(self, message, alist, stream):
+        if not alist:
+            return
+        print "----------------------------------------------"
+        print message
+        sorted_list = sorted(alist, key=lambda x: self._timed_tests[x])
+        for test in sorted_list:
+            stream.writeln("%s: %0.4f" % (test, self._timed_tests[test])
+
     def report(self, stream):
         """Report the test times"""
         if not self.enabled:
             return
-        d = sorted(self._timed_tests.iteritems(), key=operator.itemgetter(1))
-        for test, time_taken in d:
-            status = self.STATUS[self._status_tests[test]]
-            stream.writeln("%s: %0.4f (%s)" % (test, time_taken, status))
+        self.report_list_test(self, "PASSED", self._passed_tests)
+        self.report_list_test(self, "FAILED", self._passed_tests)
+        self.report_list_test(self, "ERROR", self._passed_tests)
 
     def _register_time(self, test):
         self._timed_tests[test.id()] = self._timeTaken()
 
     def addError(self, test, err, capt=None):
         self._register_time(test)
-        self._status_tests[test.id()] = self.ERROR
+        self._error_tests.append(test.id())
 
     def addFailure(self, test, err, capt=None, tb_info=None):
         self._register_time(test)
-        self._status_tests[test.id()] = self.FAILED
+        self._failed_tests.append(test.id())
 
     def addSuccess(self, test, capt=None):
         self._register_time(test)
-        self._status_tests[test.id()] = self.PASSED
+        self._passed_tests.append(test.id())
