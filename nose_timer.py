@@ -98,9 +98,9 @@ class NoseTimer(Plugin):
         """Report the test times"""
         if not self.enabled:
             return
-        self.report_list_test(self, "PASSED", self._passed_tests)
-        self.report_list_test(self, "FAILED", self._passed_tests)
-        self.report_list_test(self, "ERROR", self._passed_tests)
+        self.report_list_test("PASSED", self._passed_tests, stream)
+        self.report_list_test("FAILED", self._passed_tests, stream)
+        self.report_list_test("ERROR", self._passed_tests, stream)
 
     def _register_time(self, test):
         self._timed_tests[test.id()] = self._timeTaken()
